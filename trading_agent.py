@@ -132,7 +132,7 @@ class TradingAgent:
         if state["decision"] == "SKIP":
             return state
             
-        amount_to_trade = 5.0
+        amount_to_trade = min(2.0, settings.MAX_TRADE_SIZE)
         state["trade_amount"] = amount_to_trade
         
         if self.risk_manager.validate_trade(amount_to_trade):
