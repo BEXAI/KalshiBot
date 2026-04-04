@@ -233,11 +233,6 @@ class KalshiClientWrapper:
         # We inject Kalshi RSA headers as extra_headers during the WSS HTTP handshake
         auth_headers = self._generate_headers("GET", "/ws/v2")
         
-        auth_payload = json.dumps({
-            "id": 1,
-            "cmd": "authenticate"
-        })
-        
         # Dynamically map the subset required to avoid silent server stream drops
         markets = await self.get_active_markets()
         tracked_ids = [m['id'] for m in markets] if markets else []
@@ -252,8 +247,7 @@ class KalshiClientWrapper:
         
         try:
             async with websockets.connect(wss_url, ssl=ssl_context, extra_headers=auth_headers) as websocket:
-                print(f"[WebSocket] Connected to {wss_url}. Transmitting authenticate & subscribe commands...")
-                await websocket.send(auth_payload)
+                print(f"[WebSocket] Connected to {wss_url}. Transmitting subscription target arrays...")
                 await websocket.send(subscribe_payload)
                 
                 # Infinite generator yielding market ticks
