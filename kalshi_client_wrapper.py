@@ -135,6 +135,9 @@ class KalshiClientWrapper:
         idempotency_uuid = str(uuid.uuid4())
         path = "/portfolio/orders"
         
+        # Clamp constraints natively to prevent mathematical bounding faults hitting Kalshi API limits
+        limit_price_cents = max(1, min(99, int(limit_price_cents)))
+
         payload = {
             "action": side.lower(),
             "client_order_id": idempotency_uuid,
@@ -235,10 +238,14 @@ class KalshiClientWrapper:
             "cmd": "authenticate"
         })
         
+        # Dynamically map the subset required to avoid silent server stream drops
+        markets = await self.get_active_markets()
+        tracked_ids = [m['id'] for m in markets] if markets else []
+        
         subscribe_payload = json.dumps({
             "id": 2,
             "cmd": "subscribe",
-            "params": {"channels": ["ticker"]} # We subscribe global tick data
+            "params": {"channels": ["ticker", "orderbook_delta"], "market_tickers": tracked_ids}
         })
         
         ssl_context = ssl.create_default_context(cafile=certifi.where())
