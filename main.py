@@ -15,6 +15,7 @@ from src.strategies.arbitrage_scanner import ArbitrageScanner
 from src.strategies.market_maker import MarketMaker
 from src.strategies.momentum_rider import MomentumRider
 from src.strategies.timesfm_forecaster import TimesFMForecaster
+from src.strategies.weather_trader import WeatherTrader
 from settings import settings
 from filter_engine import TickAggregator
 from error_cache import error_cache
@@ -51,6 +52,7 @@ async def main():
         arbitrage = ArbitrageScanner(kalshi_client=kalshi_client, risk_manager=risk_manager)
         market_maker = MarketMaker(kalshi_client=kalshi_client, risk_manager=risk_manager)
         momentum_rider = MomentumRider(kalshi_client=kalshi_client, risk_manager=risk_manager)
+        weather_trader = WeatherTrader(kalshi_client=kalshi_client, risk_manager=risk_manager)
         
         print(f"Connected Master Session Pool targeting {kalshi_client.base_url}")
         print("Launching live WebSocket streams...")
@@ -127,12 +129,20 @@ async def main():
                                 arb_result = await arbitrage.scan_market(_mid, _ms["question"], _ms["mid_price"])
                                 mm_result = await market_maker.provide_liquidity(_mid, final_state['llm_prob'])
                                 
+                                # Pure mathematical bypass for hyper-deterministic meteorological structures
+                                wt_result = {"status": "weather_trade_skipped", "reason": "Not a weather market"}
+                                if "KXTEMP" in _mid:
+                                    balance_res = await kalshi_client.get_balance()
+                                    raw_balance = balance_res.get("data", {}).get("balance", 0) / 100.0
+                                    wt_result = await weather_trader.evaluate_weather_market(_mid, _ms["mid_price"], raw_balance)
+                                
                                 combined_audit = {
                                     "market": _mid,
                                     "timestamp": current_time,
                                     "debate_inference": final_state,
                                     "arbitrage_sweep": arb_result,
-                                    "market_making_sweep": mm_result
+                                    "market_making_sweep": mm_result,
+                                    "weather_sweep": wt_result
                                 }
 
                                 with open(output_file, "a") as f:
