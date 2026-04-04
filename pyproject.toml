@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "kalshi-trading-bot"
-version = "0.2.0"
+version = "1.0.0"
 description = "Agentic AI Kalshi Trading Bot"
 authors = ["Nathaniel"]
 
