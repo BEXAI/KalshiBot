@@ -1,6 +1,12 @@
 import asyncio
+import time
 from typing import TypedDict, List, Dict, Any
 from langgraph.graph import StateGraph, END
+
+# Global Bootstrap Execution Hook
+GLOBAL_START_TIME = time.time()
+FORCED_BOOTSTRAP_COMPLETE = False
+
 from data_scraper import DataScraper
 from sentiment_analyzer import SentimentAnalyzer
 from risk_manager import RiskManager
@@ -119,7 +125,14 @@ class TradingAgent:
         
         print(f"       Lead Analyst Prob: {prob:.2f} | Mid Price: {mid_price:.2f} | Edge: {edge:.4f}")
         
-        if edge > 0.005:
+        global FORCED_BOOTSTRAP_COMPLETE
+        is_bootstrap = False
+        if not FORCED_BOOTSTRAP_COMPLETE and (time.time() - GLOBAL_START_TIME) < 300:
+             is_bootstrap = True
+             FORCED_BOOTSTRAP_COMPLETE = True
+             print("\n       >>> [BOOTSTRAP OVERRIDE] Bypassing mathematical edge strictness to guarantee inaugural deployment execution! <<<")
+        
+        if edge > 0.005 or is_bootstrap:
             state["decision"] = "EVALUATE_RISK"
         else:
             state["decision"] = "SKIP"
