@@ -38,41 +38,42 @@ class DebateEngine:
         )
         
     @staticmethod
-    def get_forecaster_prompt() -> str:
+    def get_forecaster_prompt(tfm_data: str = "") -> str:
         return (
             "<instructions>\n"
             "You are a hyper-rational Statistical Forecaster.\n"
             "You are strictly prohibited from using emotional narrative. You only calculate historical base rates, standard deviation, and Bayesian priors.\n"
-            "If an event has never happened, the base rate is near 0%. Document the mathematical decay of time.\n"
+            "If provided, prioritize the TimesFM Algorithmic model arrays directly to ground your logic.\n"
             "Step 1: In a <think> block, compute the objective mathematical probabilities.\n"
             "Step 2: Output a concise 3-sentence statistical digest inside a strict <summary> block.\n"
-            "</instructions>"
+            "</instructions>\n\n"
+            f"<timesfm_anchor>\n{tfm_data}\n</timesfm_anchor>"
         )
 
     @staticmethod
-    def get_risk_manager_prompt() -> str:
+    def get_risk_manager_prompt(tfm_data: str = "") -> str:
         return (
             "<instructions>\n"
             "You are a paranoid Quant Risk Manager for an autonomous trading fund.\n"
-            "Ignore whether the event happens or not; focus purely on resolution ambiguity and execution risk.\n"
+            "Ignore whether the event happens or not; focus purely on resolution ambiguity, execution risk, and array volatility metrics.\n"
             "Are the Kalshi market rules poorly defined? Could there be a delayed settlement? Is liquidity dangerously low?\n"
             "Step 1: In a <think> block, pinpoint the exact execution externalities.\n"
             "Step 2: Output a concise 3-sentence risk report inside a strict <summary> block.\n"
-            "</instructions>"
+            "</instructions>\n\n"
+            f"<timesfm_volatility_metrics>\n{tfm_data}\n</timesfm_volatility_metrics>"
         )
 
     @staticmethod
-    def get_lead_analyst_prompt(bull_arg: str, bear_arg: str, forecast_arg: str, risk_arg: str) -> str:
+    def get_lead_analyst_prompt(bull_arg: str, bear_arg: str, forecast_arg: str, risk_arg: str, tfm_data: str = "") -> str:
         return (
             "<instructions>\n"
-            "You are the Lead Portfolio Manager for an elite Quant Fund. Your job is to read your four analysts' reports and determine the true mathematical probability of the event occurring.\n"
-            "You must synthesize the confirmation-biased Bull, the pessimistic Bear, the objective Forecaster, and the execution Risk.\n"
-            "WEIGHTING RULE: Discount emotional narrative heavily. Favor the Statistical Forecaster. Penalize high execution ambiguity.\n"
+            "You are the Lead Portfolio Manager for an elite Quant Fund. Your job is to read your analysts' reports and determine the true mathematical probability of the event occurring.\n"
+            "You must synthesize the confirmation-biased Bull, the pessimistic Bear, the objective Forecaster, the execution Risk, and the TimesFM 2.5 baseline array bounds.\n"
+            "WEIGHTING RULE: Discount emotional narrative heavily. Favor the Statistical Forecaster. Penalize high execution ambiguity. EXPLICITLY weigh TimesFM bounds dynamically with an independent 45% matrix weight if aligned with the Forecaster's baseline direction.\n"
             "\n"
             "CRITICAL OUTPUT RESTRICTION:\n"
             "You MUST output ONLY a valid JSON float representing the probability from 0.00 to 1.00.\n"
-            "Do NOT include the word 'json'. Do NOT include markdown blocks like ```. \n"
-            "If you include any text other than the raw number, our JSON decoder will crash permanently. You will be penalized severely.\n"
+            "Do NOT include markdown blocks like ```.\n"
             "PERFECT EXAMPLE: 0.65\n"
             "</instructions>\n\n"
             "<debate_context>\n"
@@ -80,6 +81,7 @@ class DebateEngine:
             f"<bear_research>\n{bear_arg}\n</bear_research>\n"
             f"<statistical_forecast>\n{forecast_arg}\n</statistical_forecast>\n"
             f"<risk_report>\n{risk_arg}\n</risk_report>\n"
+            f"<timesfm_bounds>\n{tfm_data}\n</timesfm_bounds>\n"
             "</debate_context>\n\n"
             "OUTPUT ONLY THE FLOAT NUMBER:"
         )

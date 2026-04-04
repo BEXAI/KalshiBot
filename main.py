@@ -14,6 +14,8 @@ from trading_agent import TradingAgent
 from src.strategies.arbitrage_scanner import ArbitrageScanner
 from src.strategies.market_maker import MarketMaker
 from src.strategies.momentum_rider import MomentumRider
+from src.strategies.timesfm_forecaster import TimesFMForecaster
+from settings import settings
 from filter_engine import TickAggregator
 from error_cache import error_cache
 
@@ -35,8 +37,17 @@ async def main():
     # Open the Single Connection Pool Master Lifecycle
     async with KalshiClientWrapper() as kalshi_client:
         
+        # Instantiate Algorithmic Predictor Rules
+        timesfm_forecaster = None
+        if settings.TIMESFM_ENABLED:
+            timesfm_forecaster = TimesFMForecaster(
+                context_len=settings.TIMESFM_MIN_HISTORY,
+                horizon_len=settings.TIMESFM_HORIZON,
+                cooldown_seconds=settings.TIMESFM_COOLDOWN
+            )
+
         # Inject the context pool downward into all agents
-        agent = TradingAgent(kalshi_client=kalshi_client, risk_manager=risk_manager)
+        agent = TradingAgent(kalshi_client=kalshi_client, risk_manager=risk_manager, timesfm_forecaster=timesfm_forecaster)
         arbitrage = ArbitrageScanner(kalshi_client=kalshi_client, risk_manager=risk_manager)
         market_maker = MarketMaker(kalshi_client=kalshi_client, risk_manager=risk_manager)
         momentum_rider = MomentumRider(kalshi_client=kalshi_client, risk_manager=risk_manager)
@@ -88,6 +99,9 @@ async def main():
                     # 2. Evaluate High-Velocity Momentum Loop continuously
                     await momentum_rider.evaluate_momentum(market_id, mid_price)
                     
+                    if timesfm_forecaster:
+                        timesfm_forecaster.record_tick(market_id, mid_price)
+                        
                     # 3. Dynamic Volatility Drift Filter (Bypass static throttle)
                     if not tick_aggregator.should_trigger_ai(market_id, mid_price):
                         continue

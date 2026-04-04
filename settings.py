@@ -18,7 +18,13 @@ class Settings(BaseSettings):
     OLLAMA_URL: str = Field("http://localhost:11434", description="Local Ollama instance URL")
     LLM_MODEL: str = Field("gemma4:31b", description="Local LLM model to use")
     GEMINI_API_KEY: str = Field("dummy_key", description="Google Gemini API Key for Lead Analyst fallback")
-
+    
+    # TimesFM Algorithmic Predictor Rules
+    TIMESFM_ENABLED: bool = Field(True, description="Toggle Google TimesFM predictive analytics on or off")
+    TIMESFM_MIN_HISTORY: int = Field(32, description="Minimum sequence length natively required for TimesFM zero-shot prediction")
+    TIMESFM_MAX_HISTORY: int = Field(128, description="Maximum rolling buffer history before pruning natively")
+    TIMESFM_HORIZON: int = Field(10, description="N-Ticks into the future that the model bounds natively")
+    TIMESFM_COOLDOWN: int = Field(60, description="Cooldown natively to prevent model-exhaustion looping")
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 settings = Settings()

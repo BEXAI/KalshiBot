@@ -23,6 +23,7 @@ class AgentState(TypedDict):
     bear_arg: str
     forecast_arg: str
     risk_arg: str
+    timesfm_forecast: Dict[str, Any]
     llm_prob: float
     edge: float
     decision: str  # "TRADE", "SKIP", "PAPER_TRADE", "RISK_FAILED"
@@ -33,11 +34,12 @@ class TradingAgent:
     """
     LangGraph orchestration compiling logic from monitor_markets -> multi_agent_debate -> risk_check -> execute_trade
     """
-    def __init__(self, kalshi_client, risk_manager):
+    def __init__(self, kalshi_client, risk_manager, timesfm_forecaster=None):
         self.scraper = DataScraper()
         self.analyzer = SentimentAnalyzer()
         self.risk_manager = risk_manager
         self.kalshi = kalshi_client
+        self.timesfm_forecaster = timesfm_forecaster
         self.debate = DebateEngine()
         
         self.graph = self._build_graph()
@@ -46,6 +48,7 @@ class TradingAgent:
         workflow = StateGraph(AgentState)
         
         # Define Nodes
+        workflow.add_node("timesfm_forecast", self.timesfm_forecast_node)
         workflow.add_node("monitor_markets", self.monitor_markets_node)
         workflow.add_node("multi_agent_debate", self.multi_agent_debate_node)
         workflow.add_node("risk_check", self.risk_check_node)
@@ -54,7 +57,8 @@ class TradingAgent:
         workflow.add_node("record_skip", self.record_skip_node)
 
         # Define Edges
-        workflow.set_entry_point("monitor_markets")
+        workflow.set_entry_point("timesfm_forecast")
+        workflow.add_edge("timesfm_forecast", "monitor_markets")
         workflow.add_edge("monitor_markets", "multi_agent_debate")
         workflow.add_edge("multi_agent_debate", "risk_check")
         
@@ -76,6 +80,15 @@ class TradingAgent:
 
         return workflow.compile()
 
+    async def timesfm_forecast_node(self, state: AgentState) -> AgentState:
+        state["timesfm_forecast"] = {}
+        if self.timesfm_forecaster:
+            forecast_result = self.timesfm_forecaster.forecast_market(state["market_id"])
+            if forecast_result:
+                state["timesfm_forecast"] = forecast_result
+                print(f"[NODE] TimesFM quantitative projection completed: {forecast_result['forecast_trajectory']}")
+        return state
+
     async def monitor_markets_node(self, state: AgentState) -> AgentState:
         print(f"[NODE] monitor_markets for: {state.get('market_id')}")
         context = await self.scraper.fetch_headlines(state["market_question"])
@@ -89,11 +102,14 @@ class TradingAgent:
         context_str = "\n".join(state["context"])
         user_prompt = f"Event: {market_question}\nContext: {context_str}"
         
+        tfm = state.get("timesfm_forecast", {})
+        tfm_str = f"TimesFM Baseline Trajectory: {tfm.get('forecast_trajectory')} | Horizon: {settings.TIMESFM_HORIZON} Ticks | Confidence Mapping Input Size: {tfm.get('history_size')}" if tfm else "No algorithmic data bounds available yet."
+
         # Execute 4 personas in parallel
         bull_task = self.analyzer.evaluate_persona(self.debate.get_bull_prompt(), user_prompt)
         bear_task = self.analyzer.evaluate_persona(self.debate.get_bear_prompt(), user_prompt)
-        forecast_task = self.analyzer.evaluate_persona(self.debate.get_forecaster_prompt(), user_prompt)
-        risk_task = self.analyzer.evaluate_persona(self.debate.get_risk_manager_prompt(), user_prompt)
+        forecast_task = self.analyzer.evaluate_persona(self.debate.get_forecaster_prompt(tfm_data=tfm_str), user_prompt)
+        risk_task = self.analyzer.evaluate_persona(self.debate.get_risk_manager_prompt(tfm_data=tfm_str), user_prompt)
         
         bull_arg, bear_arg, forecast_arg, risk_arg = await asyncio.gather(
             bull_task, bear_task, forecast_task, risk_task
@@ -107,7 +123,7 @@ class TradingAgent:
         print("       --> Sub-personas completed debate computation")
         
         # Lead Analyst synthesis
-        lead_prompt = self.debate.get_lead_analyst_prompt(bull_arg, bear_arg, forecast_arg, risk_arg)
+        lead_prompt = self.debate.get_lead_analyst_prompt(bull_arg, bear_arg, forecast_arg, risk_arg, tfm_data=tfm_str)
         lead_response = await self.analyzer.evaluate_persona(
             lead_prompt, 
             "Please formulate your final prediction float.", 
@@ -121,9 +137,22 @@ class TradingAgent:
         # Calculate Edge
         mid_price = state.get("market_mid_price", 0.5)
         edge = abs(prob - mid_price)
+        
+        # Apply TimesFM Algorithmic Alignment Bonus/Penalty natively
+        if state.get("timesfm_forecast"):
+            tfm = state["timesfm_forecast"]
+            forecast_prob = tfm["forecast_trajectory"]
+            # If both LLM and TimesFM predict movement in the same direction from mid
+            if (prob > mid_price and forecast_prob > mid_price) or (prob < mid_price and forecast_prob < mid_price):
+                 edge = edge * 1.20
+                 print(f"       [+] TimesFM Convergence Bonus Triggered (+20%)")
+            else:
+                 edge = edge * 0.70
+                 print(f"       [-] TimesFM Divergence Penalty Applied (-30%)")
+                 
         state["edge"] = round(edge, 4)
         
-        print(f"       Lead Analyst Prob: {prob:.2f} | Mid Price: {mid_price:.2f} | Edge: {edge:.4f}")
+        print(f"       Lead Analyst Prob: {prob:.2f} | Mid Price: {mid_price:.2f} | Edge: {state['edge']:.4f}")
         
         global FORCED_BOOTSTRAP_COMPLETE
         is_bootstrap = False
