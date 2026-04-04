@@ -18,6 +18,7 @@ class TickAggregator:
         # Time-based evaluation floor: force AI eval even if price hasn't drifted
         self.last_trigger_times = {}
         self.time_floor_seconds = 600  # 10 minutes
+        self._last_prune = time.time()
 
     def is_strategic_market(self, market_id: str) -> bool:
         """Determines if the market belongs to a high-yield alpha category."""
@@ -25,6 +26,14 @@ class TickAggregator:
 
     def should_trigger_ai(self, market_id: str, current_price: float) -> bool:
         now = time.time()
+        
+        # Memory Optimization: Prune stale markets every 60 minutes
+        if now - getattr(self, '_last_prune', 0) > 3600:
+            self._last_prune = now
+            stale_keys = [k for k, v in self.last_trigger_times.items() if now - v > 7200]
+            for k in stale_keys:
+                self.last_trigger_times.pop(k, None)
+                self.market_states.pop(k, None)
 
         if market_id not in self.market_states:
             self.market_states[market_id] = current_price

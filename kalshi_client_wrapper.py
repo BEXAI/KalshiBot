@@ -167,6 +167,10 @@ class KalshiClientWrapper:
         Fetches and caches the human-readable market title for a ticker.
         Falls back to ticker ID if the API call fails.
         """
+        # Memory Limit: Drop entirely if caching exceeds heavy active market bounds to prevent server memory bloat
+        if len(self._market_title_cache) > 200:
+            self._market_title_cache.clear()
+            
         if ticker in self._market_title_cache:
             return self._market_title_cache[ticker]
 

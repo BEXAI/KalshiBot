@@ -43,8 +43,14 @@ class MomentumRider:
             }
             return {"status": "monitoring"}
             
+        # Target threshold dynamically slashed by 60% if the L2 Radar detected immense buy-walls recently
+        spike_target = self.spike_threshold
+        if last_state.get("l2_surge") and (current_time - last_state.get("l2_time", 0)) < 15:
+             spike_target = self.spike_threshold * 0.4 
+             print(f"       -> [L2 DRIVEN] Momentum threshold slashed to {spike_target*100:.2f}% (Book Imbalance Active)")
+             
         # Is it a positive massive velocity spike?
-        if price_drift >= self.spike_threshold:
+        if price_drift >= spike_target:
             print(f"\n[MOMENTUM RIDER] 🚀 MASSIVE BREAKOUT ACCELERATION DETECTED ON {market_id}!")
             print(f"       -> Velocity: +{price_drift*100:.1f}% surge within {time_elapsed:.1f} seconds!")
             
@@ -109,4 +115,17 @@ class MomentumRider:
         """
         if imbalance_ratio >= 3.0:
             print(f"\n[L2 MOMENTUM RADAR] Intense Buy-side Book Weight Detected on {market_id}! ({imbalance_ratio:.1f}:1 B/A Ratio)")
-            # Readying to fire. Logic here could prime the pipeline or reduce threshold latency locally.
+            
+            # Prime the pipeline! Pre-warm the state engine so evaluate_momentum triggers violently fast.
+            current_time = time.time()
+            if market_id not in self.trailing_markets:
+                self.trailing_markets[market_id] = {
+                    "price": 0.50, # Dummy fallback baseline
+                    "time": current_time,
+                    "highest_price": 0.50,
+                    "l2_surge": True,
+                    "l2_time": current_time
+                }
+            else:
+                self.trailing_markets[market_id]["l2_surge"] = True
+                self.trailing_markets[market_id]["l2_time"] = current_time
