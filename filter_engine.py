@@ -21,8 +21,8 @@ class TickAggregator:
         self._last_prune = time.time()
 
     def is_strategic_market(self, market_id: str) -> bool:
-        """Determines if the market belongs to a high-yield alpha category."""
-        return bool(self.whitelist_pattern.match(market_id))
+        """Determines if the market belongs to an active category. For MVP deployment, we track all Kalshi prefix markets to guarantee rapid baseline execution bounds."""
+        return "KX" in market_id.upper()
 
     def should_trigger_ai(self, market_id: str, current_price: float) -> bool:
         now = time.time()
