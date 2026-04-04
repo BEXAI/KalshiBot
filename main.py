@@ -11,7 +11,6 @@ os.environ['SSL_CERT_FILE'] = certifi.where()
 from kalshi_client_wrapper import KalshiClientWrapper
 from risk_manager import RiskManager
 from trading_agent import TradingAgent
-from src.strategies.copy_trader import CopyTrader
 from src.strategies.arbitrage_scanner import ArbitrageScanner
 from src.strategies.market_maker import MarketMaker
 from src.strategies.momentum_rider import MomentumRider
@@ -38,7 +37,6 @@ async def main():
         
         # Inject the context pool downward into all agents
         agent = TradingAgent(kalshi_client=kalshi_client, risk_manager=risk_manager)
-        copy_trader = CopyTrader(kalshi_client=kalshi_client, risk_manager=risk_manager)
         arbitrage = ArbitrageScanner(kalshi_client=kalshi_client, risk_manager=risk_manager)
         market_maker = MarketMaker(kalshi_client=kalshi_client, risk_manager=risk_manager)
         momentum_rider = MomentumRider(kalshi_client=kalshi_client, risk_manager=risk_manager)
@@ -115,16 +113,12 @@ async def main():
                                 arb_result = await arbitrage.scan_market(_mid, _ms["question"], _ms["mid_price"])
                                 mm_result = await market_maker.provide_liquidity(_mid, final_state['llm_prob'])
                                 
-                                # Placeholder for external whale signals, executing dynamically
-                                copy_result = await copy_trader.execute_copy_trading_cycle(_mid, [])
-
                                 combined_audit = {
                                     "market": _mid,
                                     "timestamp": current_time,
                                     "debate_inference": final_state,
                                     "arbitrage_sweep": arb_result,
-                                    "market_making_sweep": mm_result,
-                                    "copy_trading": copy_result
+                                    "market_making_sweep": mm_result
                                 }
 
                                 with open(output_file, "a") as f:
