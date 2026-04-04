@@ -63,7 +63,7 @@ async def main():
                                 await momentum_rider.evaluate_momentum_imbalance(ob_market, ob_imbalance)
                         continue
                         
-                    if msg_type != "market_ticker":
+                    if msg_type != "ticker":
                         continue
                     
                     ticker_data = tick.get("ticker", {})
