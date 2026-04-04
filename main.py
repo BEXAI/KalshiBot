@@ -124,25 +124,38 @@ async def main():
                         async with ai_semaphore:
                             try:
                                 current_time = time.time()
+                                
+                                # 1. Fast-Path Bypass for Pure Mathematical Models
+                                if "KXTEMP" in _mid:
+                                    balance_res = await kalshi_client.get_balance()
+                                    raw_balance = balance_res.get("data", {}).get("balance", 0) / 100.0
+                                    wt_result = await weather_trader.evaluate_weather_market(_mid, _ms["mid_price"], raw_balance)
+                                    
+                                    combined_audit = {
+                                        "market": _mid,
+                                        "timestamp": current_time,
+                                        "strategy_type": "hybrid_quant_weather",
+                                        "weather_sweep": wt_result
+                                    }
+                                    
+                                    with open(output_file, "a") as f:
+                                        f.write(json.dumps(combined_audit) + "\n")
+                                    print(f"[EVENT] Saved meteorological quant state audit for {_mid}")
+                                    return # Abort further LLM processing entirely for efficiency 
+
+                                # 2. Heavy AI Strategy Pipeline for Standard Prediction Markets
                                 final_state = await agent.run_market_cycle(_ms)
 
                                 arb_result = await arbitrage.scan_market(_mid, _ms["question"], _ms["mid_price"])
                                 mm_result = await market_maker.provide_liquidity(_mid, final_state['llm_prob'])
                                 
-                                # Pure mathematical bypass for hyper-deterministic meteorological structures
-                                wt_result = {"status": "weather_trade_skipped", "reason": "Not a weather market"}
-                                if "KXTEMP" in _mid:
-                                    balance_res = await kalshi_client.get_balance()
-                                    raw_balance = balance_res.get("data", {}).get("balance", 0) / 100.0
-                                    wt_result = await weather_trader.evaluate_weather_market(_mid, _ms["mid_price"], raw_balance)
-                                
                                 combined_audit = {
                                     "market": _mid,
                                     "timestamp": current_time,
+                                    "strategy_type": "llm_agentic_prediction",
                                     "debate_inference": final_state,
                                     "arbitrage_sweep": arb_result,
-                                    "market_making_sweep": mm_result,
-                                    "weather_sweep": wt_result
+                                    "market_making_sweep": mm_result
                                 }
 
                                 with open(output_file, "a") as f:
