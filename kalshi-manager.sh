@@ -18,6 +18,7 @@ show_help() {
     echo "Commands:"
     echo "  setup       - Configure Python .venv, dependencies, and Claude Code boundaries"
     echo "  vibe        - Boot a context-aware Claude native terminal coding session"
+    echo "  test        - Spawns the dynamic CI/CD Endpoint Health loop checking V2 schema parity natively"
     echo "  launch      - Start the production KalshiBot daemon securely in the background"
     echo "  stop        - Safely terminate and kill all background daemon execution loops"
     echo "  dashboard   - Spin up the Streamlit interface (mapped naturally to the iPad UI)"
@@ -42,6 +43,13 @@ vibe() {
     else
         echo "[!] Claude CLI not detected globally. Run standard npm/brew installation routines!"
     fi
+}
+
+test() {
+    echo ">> [CI/CD] Booting the dynamic Kalshi API Endpoint Health array..."
+    source .venv3.nosync/bin/activate 2>/dev/null || true
+    export PYTHONUNBUFFERED=1
+    python3 src/utils/endpoint_health.py
 }
 
 launch() {
@@ -94,6 +102,7 @@ EOF
 case "$1" in
     setup) setup ;;
     vibe) vibe ;;
+    test) test ;;
     launch) launch ;;
     stop) stop ;;
     dashboard) dashboard ;;

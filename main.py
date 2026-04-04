@@ -67,9 +67,9 @@ async def main():
                         
                     msg_type = tick.get("type")
                     
-                    if msg_type == "orderbook_delta":
-                        ob_data = tick.get("orderbook_delta", {})
-                        ob_market = ob_data.get("market_id")
+                    if msg_type in ["orderbook_delta", "orderbook_snapshot"]:
+                        ob_data = tick.get("msg", {})
+                        ob_market = ob_data.get("market_ticker")
                         if ob_market and tick_aggregator.is_strategic_market(ob_market):
                             ob_imbalance = tick_aggregator.track_orderbook(ob_market, ob_data)
                             if ob_imbalance > 3.0:
@@ -79,8 +79,8 @@ async def main():
                     if msg_type != "ticker":
                         continue
                     
-                    ticker_data = tick.get("ticker", {})
-                    market_id = ticker_data.get("ticker")
+                    ticker_data = tick.get("msg", {})
+                    market_id = ticker_data.get("market_ticker")
                     if not market_id:
                         continue
                     
@@ -166,8 +166,11 @@ async def main():
                                 error_cache.record_error("MasterLoop_Pipeline", e, {"market_id": _mid})
 
                     asyncio.create_task(process_market_event())
+            except asyncio.exceptions.CancelledError:
+                print(f"[SHUTDOWN] WSS Stream successfully cancelled natively.")
+                break
             except Exception as conn_err:
-                print(f"[CRITICAL] Global WebSocket feed interrupted: {conn_err}. Recovering in 5s...")
+                print(f"[CRITICAL] Global WebSocket feed interrupted: {conn_err}. Recovering natively in 5s...")
                 await asyncio.sleep(5)
 
 if __name__ == "__main__":

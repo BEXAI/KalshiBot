@@ -1,5 +1,6 @@
 import os
 import websockets
+import asyncio
 import json
 import aiohttp
 import ssl
@@ -253,5 +254,8 @@ class KalshiClientWrapper:
                 # Infinite generator yielding market ticks
                 async for message in websocket:
                     yield json.loads(message)
+        except asyncio.exceptions.CancelledError:
+            print("[WebSocket] Stream securely cancelled organically.")
+            raise
         except Exception as e:
             print(f"[WebSocket] Error listening to Kalshi streams: {e}")

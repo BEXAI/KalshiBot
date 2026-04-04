@@ -14,5 +14,12 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Endpoint Parity Diagnostic Check
+python3 src/utils/endpoint_health.py
+if [ $? -ne 0 ]; then
+    echo "[!] CRITICAL: Live API Schema execution structurally dropped. Halting daemon."
+    exit 1
+fi
+
 # 'exec' replaces the overarching bash script PID with the raw Python PID ensuring launchd kills/restarts act beautifully
 exec python3 main.py
