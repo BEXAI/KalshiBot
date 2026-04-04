@@ -17,7 +17,7 @@ class TickAggregator:
 
         # Time-based evaluation floor: force AI eval even if price hasn't drifted
         self.last_trigger_times = {}
-        self.time_floor_seconds = 180  # 3 minutes
+        self.time_floor_seconds = 30  # 30 seconds to force ultra-fast execution
         self._last_prune = time.time()
 
     def is_strategic_market(self, market_id: str) -> bool:
