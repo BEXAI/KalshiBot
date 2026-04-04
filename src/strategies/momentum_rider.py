@@ -14,7 +14,7 @@ class MomentumRider:
         # 0.8% micro-drift across 5-minutes (targets ~10-minute trade cadence)
         self.spike_threshold = 0.008
         self.time_window_seconds = 300
-        self.unit_size_dollars = 5.0 # $5 per trade to stretch daily budget across 6x more trades
+        self.unit_size_dollars = 2.0 # $2 per trade to stretch daily budget natively
         
     async def evaluate_momentum(self, market_id: str, current_price: float):
         """

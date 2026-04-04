@@ -5,14 +5,14 @@ class Settings(BaseSettings):
     # Kalshi Authentication
     KALSHI_API_KEY_ID: str = Field(..., description="Kalshi API Key ID")
     KALSHI_PRIVATE_KEY_PATH: str = Field(..., description="Absolute path to the Kalshi RSA .pem private key")
-    KALSHI_API_URL: str = Field("https://demo-api.kalshi.co/trade-api/v2", description="Kalshi API endpoint (demo or prod)")
-    KALSHI_ENV: str = Field("sandbox", description="Kalshi environment: sandbox or production")
+    KALSHI_API_URL: str = Field("https://api.elections.kalshi.com/trade-api/v2", description="Kalshi API endpoint (demo or prod)")
+    KALSHI_ENV: str = Field("production", description="Kalshi environment: sandbox or production")
     # Trading Parameters
-    PAPER_MODE: bool = Field(True, description="If True, routes to paper execution")
-    MAX_TRADE_SIZE: float = Field(25.0, description="Max spend per trade in dollars/cents")
-    MAX_DAILY_SPEND: float = Field(500.0, description="Max daily spend in dollars/cents")
+    PAPER_MODE: bool = Field(False, description="If True, routes to paper execution")
+    MAX_TRADE_SIZE: float = Field(4.0, description="Max spend per trade in dollars/cents")
+    MAX_DAILY_SPEND: float = Field(20.0, description="Max daily spend in dollars/cents")
     KILL_SWITCH_ACTIVE: bool = Field(False, description="Disable all trading if True")
-    MAX_DRAWDOWN: float = Field(500.0, description="Max overall drawdown allowed")
+    MAX_DRAWDOWN: float = Field(20.0, description="Max overall drawdown allowed")
     
     # LLM Parameters
     OLLAMA_URL: str = Field("http://localhost:11434", description="Local Ollama instance URL")

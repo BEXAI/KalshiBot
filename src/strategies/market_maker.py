@@ -51,7 +51,7 @@ class MarketMaker:
              print(f"[MARKET MAKER] Mathematical crossover anomaly detected on {market_id}. Skipping.")
              return {"status": "skipped", "reason": "spread_inverted"}
              
-         trade_amount_cents = 500 # Defaults to 5 contracts ($5 risk per leg)
+         trade_amount_cents = 200 # Defaults to 2 contracts ($2 risk per leg)
 
          if not self.risk_manager.validate_trade((trade_amount_cents * 2) / 100.0):
              return {"status": "skipped", "reason": "risk_manager_veto"}
