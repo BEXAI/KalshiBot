@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/Users/nathaniel/Kalshi/logs/.dd413f74ef7870fc3562d549e676b62d3eedac8a-audit.json",
+    "files": [
+        {
+            "date": 1775263751680,
+            "name": "/Users/nathaniel/Kalshi/logs/mcp-puppeteer-2026-04-03.log",
+            "hash": "f616ba0571ce295e2ef73f3ed7a3b365ae335d1ba17f538ac23183955796527e"
+        }
+    ],
+    "hashType": "sha256"
+}

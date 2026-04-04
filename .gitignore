@@ -1,0 +1,31 @@
+# Environment & Secrets
+.env
+*.pem
+*.key
+kalshi_live_key.txt
+credentials.json
+
+# Execution Logs
+*.log
+*.jsonlines
+kalshi_trades.jsonlines
+
+# Python Core
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# OS & IDE
+.DS_Store
+.idea/
+.vscode/
+
+# Ignore Jupyter
+.ipynb_checkpoints
