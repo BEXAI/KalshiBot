@@ -7,5 +7,12 @@ source .venv3.nosync/bin/activate 2>/dev/null || source venv.nosync/bin/activate
 # Unbuffered execution prevents terminal hang and pushes exact strings instantly to the .log tracker
 export PYTHONUNBUFFERED=1
 
+# Pre-Flight Diagnostic Check
+python audit_bot.py
+if [ $? -ne 0 ]; then
+    echo "[!] CRITICAL: Pre-flight Audit failed. Halting daemon."
+    exit 1
+fi
+
 # 'exec' replaces the overarching bash script PID with the raw Python PID ensuring launchd kills/restarts act beautifully
-exec /Users/nathaniel/Kalshi/.venv3.nosync/bin/python main.py
+exec python main.py

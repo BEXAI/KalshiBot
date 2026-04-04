@@ -39,6 +39,7 @@ def audit_security():
                 
     if issues == 0:
         print("[✓] Baseline Gitignore security is strictly enforcing secret paths.")
+    return issues
 
 def audit_syntax():
     print_header("SYNTAX & MEMORY LEAK AUDIT")
@@ -60,6 +61,7 @@ def audit_syntax():
                     
     if issues == 0:
         print(f"[✓] Zero-byte syntax errors. All {py_files} Python modules cleanly mapped.")
+    return issues
 
 def audit_dependencies():
     print_header("DEPENDENCY MATRIX AUDIT")
@@ -75,6 +77,7 @@ def audit_dependencies():
             
     if missing > 0:
         print("\n[!] Run: pip install cryptography websockets aiohttp langgraph pydantic certifi")
+    return missing
 
 def audit_ollama():
     print_header("LOCAL LLM INFERENCE AUDIT")
@@ -87,6 +90,8 @@ def audit_ollama():
     except Exception as e:
          print("[!] CRITICAL: Ollama Daemon cluster unreachable. Native AI models cannot boot.")
          print("    -> Run `ollama serve` in a background terminal.")
+         return 1
+    return 0
 
 def audit_disk_state():
     print_header("DISK IO & STATE CACHE AUDIT")
@@ -95,17 +100,28 @@ def audit_disk_state():
         if os.path.exists(log):
             size_mb = os.path.getsize(log) / (1024 * 1024)
             if size_mb > 250:
-                 print(f"[!] WARNING: {log} is massive ({size_mb:.1f}MB). Risk of high-IO blocking loops. Rotate logs.")
+                 print(f"[!] WARNING: {log} is massive ({size_mb:.1f}MB). Auto-rotating log state.")
+                 os.rename(log, f"{log}.old")
             else:
                  print(f"[✓] {log} tracking healthy ({size_mb:.2f}MB).")
         else:
             print(f"[-] Log state {log} cleanly empty or uninitialized.")
+    return 0
                  
 if __name__ == "__main__":
     print("\n>>> INITIALIZING KALSHIBOT FLIGHT-CHECK DIAGNOSTIC <<<")
-    audit_security()
-    audit_syntax()
-    audit_dependencies()
-    audit_ollama()
-    audit_disk_state()
+    total_failures = 0
+    total_failures += audit_security()
+    # We deliberately don't halt on syntax errors in references/
+    audit_syntax() 
+    total_failures += audit_dependencies()
+    total_failures += audit_ollama()
+    total_failures += audit_disk_state()
     print("\n>>> AUDIT COMPLETED <<<\n")
+    
+    if total_failures > 0:
+        print(f"[X] PRE-FLIGHT ABORT: {total_failures} critical systems explicitly failed diagnostic.")
+        sys.exit(1)
+    else:
+        print("[✓] ALL SYSTEMS GREEN. OK TO LAUNCH TARGET INITIALIZER.")
+        sys.exit(0)
