@@ -12,6 +12,15 @@ This bot abandons standard retail SDKs in favor of raw asynchronous HTTP/WebSock
    - **Parallel Sub-Agents**: Four zero-latency Gemma 4 persona instances (Bull, Bear, Volatility Forecaster, Risk Management) run asynchronously in parallel to attack the market data. Their independent context arguments are then piped outward to a final Lead Analyst for high-level probability synthesis. Minimum overhead; maximum logic density.
 3. **Filter Engine (`filter_engine.py`)**: Drops >95% of useless tick noise. Evaluates absolute price drift and L2 `orderbook_delta` resting B/A ratios to filter triggers.
 
+## Primary Trading Theory & Alpha Generation
+
+This system fundamentally rejects "crystal-ball" outcome guessing. Instead, it systematically profits off **Micro-Volatility and Human Panic** via machine-speed latency exploitation. 
+
+The strategy isolates edge using three concurrent vectors:
+*   **Adverse Selection Protection:** Human traders place neutral limits symmetrically. When a whale dumps a position, these retail limits are absorbed instantly (adverse selection). KalshiBot natively shifts its inventory quotes dynamically. If the AI believes a market is fundamentally undervalued at $0.50, KalshiBot tightens its active Bid (e.g., to $0.49), but dramatically widens its short Ask out of reach (to $0.65). It continuously collects favorable, edge-aligned inventory during violent swings while preventing toxic flow from hitting its wrong side.
+*   **L2 Orderbook Momentum Sweeping:** Humans react to the printed price. KalshiBot reacts to resting limit imbalances. By parsing `orderbook_delta`, if the bid/ask stack jumps to a > 3:1 ratio, the bot front-runs the break by executing *marketable limits* (+1c slippage) to sweep liquidity before the spread physically moves.
+*   **Risk-Free Parity Hedging:** Constant absolute-value scanning dynamically pairs Kalshi logic states against Gamma-API Polymarket contracts, seeking multi-percentage risk-free yielding structures globally.
+
 ## The Strategy Primitives
 
 The codebase utilizes multiple modular attack vectors based on the LLM's determined edge:
