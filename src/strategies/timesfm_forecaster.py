@@ -54,16 +54,23 @@ class TimesFMForecaster:
         Runs the zero-shot forecaster. Returns predicted value and uncertainty band safely natively.
         """
         history = self.tick_buffers.get(market_id, [])
-        if len(history) < self.context_len:
-            return None # Not enough history to formulate a dense patch window
+        if len(history) == 0:
+            return None # Must have at least 1 tick to establish flatline bounds
             
         if self.should_cooldown(market_id):
             return None
             
         self._lazy_load_model()
         
+        # Cold-Start Autopadding Synergy: Pad immediate volatility breakouts mathematically!
+        if len(history) < self.context_len:
+            pad_size = self.context_len - len(history)
+            padded_history = [history[0]] * pad_size + history
+        else:
+            padded_history = history[-self.context_len:]
+            
         # Prepare strictly exactly context_len array bounds
-        context_array = np.array(history[-self.context_len:], dtype=np.float32)
+        context_array = np.array(padded_history, dtype=np.float32)
         
         print(f"\n[TIMESFM] Triggering Zero-Shot Quantitative Predictor on {market_id}")
         

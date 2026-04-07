@@ -48,7 +48,7 @@ class ArbitrageScanner:
         # We strip the "Will" and "?" to ensure Polymarket's Gamma search index has the best chance.
         cleaned_question = kalshi_question.replace("?", "").replace("Will", "").strip()
         encoded = urllib.parse.quote(cleaned_question)
-        search_url = f"{self.polymarket_url}?title={encoded}"
+        search_url = f"{self.polymarket_url}?title={encoded}&active=true&closed=false"
         
         try:
             ssl_context = ssl.create_default_context(cafile=certifi.where())

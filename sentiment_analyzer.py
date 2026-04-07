@@ -88,14 +88,15 @@ class SentimentAnalyzer:
 
         try:
             session = await self._get_session()
-            async with session.post(self.ollama_url, json=payload, timeout=aiohttp.ClientTimeout(total=45)) as response:
+            async with session.post(self.ollama_url, json=payload, timeout=aiohttp.ClientTimeout(total=300)) as response:
                 if response.status == 200:
                     data = await response.json()
                     return data.get("response", "").strip()
                 else:
                     print(f"Ollama API Error: {response.status}")
         except Exception as e:
-            print(f"Error querying Ollama: {e}")
+            # Cast exception to type and string to prevent blank TimeoutError
+            print(f"Error querying Ollama: {type(e).__name__} - {str(e)}")
             
         return ""
 

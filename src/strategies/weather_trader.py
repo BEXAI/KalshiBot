@@ -27,10 +27,13 @@ class WeatherTrader:
             "LON": {"lat": 51.5036, "lon": 0.0533}    # London City
         }
         
+        # Core global bindings
+        from settings import settings
+        
         # Hard limits based on algorithmic backtest parameters provided
         self.EDGE_THRESHOLD = 0.08  # 8% edge required
         self.KELLY_FRACTION = 0.15  # 15% fractional kelly
-        self.MAX_WEATHER_TRADE = 100.0  # Max $100 per weather target limits
+        self.MAX_WEATHER_TRADE = settings.MAX_TRADE_SIZE  # Inherit global RiskManager caps!
         
     def _parse_kalshi_ticker(self, ticker: str) -> Tuple[str, str, float]:
         """

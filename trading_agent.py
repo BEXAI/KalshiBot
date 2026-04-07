@@ -83,7 +83,7 @@ class TradingAgent:
     async def timesfm_forecast_node(self, state: AgentState) -> AgentState:
         state["timesfm_forecast"] = {}
         if self.timesfm_forecaster:
-            forecast_result = self.timesfm_forecaster.forecast_market(state["market_id"])
+            forecast_result = await asyncio.to_thread(self.timesfm_forecaster.forecast_market, state["market_id"])
             if forecast_result:
                 state["timesfm_forecast"] = forecast_result
                 print(f"[NODE] TimesFM quantitative projection completed: {forecast_result['forecast_trajectory']}")
@@ -105,15 +105,11 @@ class TradingAgent:
         tfm = state.get("timesfm_forecast", {})
         tfm_str = f"TimesFM Baseline Trajectory: {tfm.get('forecast_trajectory')} | Horizon: {settings.TIMESFM_HORIZON} Ticks | Confidence Mapping Input Size: {tfm.get('history_size')}" if tfm else "No algorithmic data bounds available yet."
 
-        # Execute 4 personas in parallel
-        bull_task = self.analyzer.evaluate_persona(self.debate.get_bull_prompt(), user_prompt)
-        bear_task = self.analyzer.evaluate_persona(self.debate.get_bear_prompt(), user_prompt)
-        forecast_task = self.analyzer.evaluate_persona(self.debate.get_forecaster_prompt(tfm_data=tfm_str), user_prompt)
-        risk_task = self.analyzer.evaluate_persona(self.debate.get_risk_manager_prompt(tfm_data=tfm_str), user_prompt)
-        
-        bull_arg, bear_arg, forecast_arg, risk_arg = await asyncio.gather(
-            bull_task, bear_task, forecast_task, risk_task
-        )
+        # Execute 4 personas sequentially for Heavy AI Inference (31B Memory Safety)
+        bull_arg = await self.analyzer.evaluate_persona(self.debate.get_bull_prompt(), user_prompt)
+        bear_arg = await self.analyzer.evaluate_persona(self.debate.get_bear_prompt(), user_prompt)
+        forecast_arg = await self.analyzer.evaluate_persona(self.debate.get_forecaster_prompt(tfm_data=tfm_str), user_prompt)
+        risk_arg = await self.analyzer.evaluate_persona(self.debate.get_risk_manager_prompt(tfm_data=tfm_str), user_prompt)
         
         state["bull_arg"] = bull_arg
         state["bear_arg"] = bear_arg

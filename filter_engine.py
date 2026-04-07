@@ -24,6 +24,24 @@ class TickAggregator:
         """Determines if the market belongs to an active category. For MVP deployment, we track all Kalshi prefix markets to guarantee rapid baseline execution bounds."""
         return "KX" in market_id.upper()
 
+    def is_toxic_market(self, market_title: str) -> bool:
+        """
+        Rejects Multi-Leg Combos and Parlay Markets which destroy standard single-variable AI Inference assumptions.
+        """
+        title_norm = market_title.lower()
+        toxic_keywords = ["combo", "leg", "parlay", "multi-game"]
+        for kw in toxic_keywords:
+            if kw in title_norm:
+                return True
+        return False
+
+    def is_profitable_bounds(self, current_price: float) -> bool:
+        """
+        Rejects extreme longshots (< 10c) and extreme sure-things (> 90c).
+        Optimizes heavy compute parameters and balances capital ROI.
+        """
+        return 0.10 <= current_price <= 0.90
+
     def should_trigger_ai(self, market_id: str, current_price: float) -> bool:
         now = time.time()
         

@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     MAX_DRAWDOWN: float = Field(20.0, description="Max overall drawdown allowed")
     
     # LLM Parameters
-    OLLAMA_URL: str = Field("http://localhost:11434", description="Local Ollama instance URL")
+    OLLAMA_URL: str = Field("http://127.0.0.1:11434", description="Local Ollama instance URL")
     LLM_MODEL: str = Field("gemma4:31b", description="Local LLM model to use")
     GEMINI_API_KEY: str = Field("dummy_key", description="Google Gemini API Key for Lead Analyst fallback")
     

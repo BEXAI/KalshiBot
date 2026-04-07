@@ -98,6 +98,10 @@ async def main():
                     mid_cents = float((y_ask + y_bid) / 2)
                     mid_price = mid_cents / 100.0
                     
+                    # Ensure ROI profitability bounds to prevent inefficient compute drops
+                    if not tick_aggregator.is_profitable_bounds(mid_price):
+                        continue
+                        
                     # 2. Evaluate High-Velocity Momentum Loop continuously
                     await momentum_rider.evaluate_momentum(market_id, mid_price)
                     
@@ -111,6 +115,11 @@ async def main():
                     print(f"\n[EVENT] Volatility drift threshold broken for {market_id}. Executing Heavy AI Inference!")
                     
                     market_title = await kalshi_client.get_market_title(market_id)
+                    
+                    # Prevent arbitrary Combo or Multi-Leg titles from entering single-variable AI model strings
+                    if tick_aggregator.is_toxic_market(market_title):
+                        print(f"[FILTER] Dropped toxic combo market natively: {market_title}")
+                        continue
                     
                     market_state = {
                         "id": market_id,
