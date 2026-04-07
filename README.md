@@ -1,40 +1,88 @@
-# BEXAI Autonomous Kalshi Trading Hub
+# BEXAI SOTA Autonomous Kalshi Trading Hub
+**State-of-the-Art (SOTA) Dual-Loop High-Frequency Agent**
 
-A high-frequency predictive market execution engine built specifically for the **Kalshi V2 API**, leveraging native RSA-PSS handshake optimizations to execute dual-sided multi-agent strategies at ultra-low latency. 
+An ultra-low latency predictive market execution engine built for the **Kalshi V2 API**, leveraging Google's quantitative zero-shot algorithmic bounds matched against local Gemma 4 multi-agent decision chains.
 
-## Architectural Overview
+---
 
-This bot abandons standard retail SDKs in favor of raw asynchronous HTTP/WebSocket sessions.
+## 🗺️ System Map: Full Stack & AI Ecosystem
 
-1. **NO-SDK Core (`kalshi_client_wrapper.py`)**: Establishes persistent `aiohttp` pipelines and `websockets` streams. Completely bypasses intermediate library latency by directly computing RSA-PSS header signatures natively.
-2. **Gemma 4 Cognitive Architecture (`sentiment_analyzer.py` / `trading_agent.py`)**: At the core of the pricing model is a state-driven Multi-LLM Debate matrix running locally with **Gemma 4** (via Ollama). 
-   - **Internal Monologue Pipeline**: Gemma 4 natively uses rigorous internal reasoning flows. The bot is explicitly tuned to harness Gemma 4's `<data>` contracts, stripping the raw `<think>...</think>` inference streams into memory while utilizing RegEx frameworks to surgically extract the clean execution boundaries from Gemma's `<summary>` headers.
-   - **Parallel Sub-Agents**: Four zero-latency Gemma 4 persona instances (Bull, Bear, Volatility Forecaster, Risk Management) run asynchronously in parallel to attack the market data. Their independent context arguments are then piped outward to a final Lead Analyst for high-level probability synthesis. Minimum overhead; maximum logic density.
-3. **Filter Engine (`filter_engine.py`)**: Drops >95% of useless tick noise. Evaluates absolute price drift and L2 `orderbook_delta` resting B/A ratios to filter triggers.
+### The AI & LLM Array
+*   **Google TimesFM 2.5 (200M)**: Hardware-accelerated (via Apple PyTorch MPS tensors) time-series foundation model calculating continuous left-padded tick differentials dynamically across the Kalshi L2 limit matrix.  
+*   **Google Gemma 4 (31B)**: The "Slow-Loop" qualitative reasoner. Processes multi-agent LangGraph debates (Bull vs. Bear personas) and bounds pure JSON risk decisions independently.
+*   **Ollama Orchestrator**: Manages local inference for Gemma 4 using K/V cache pipelines natively to prevent unified VRAM depletion on Apple Silicon setups.
 
-## Primary Trading Theory & Alpha Generation
+### API Intelligence Web
+*   **Kalshi Trade API V2 (`api.elections.kalshi.com`)**: Custom *NO-SDK* HTTP endpoints employing manual RSA-PSS payload cryptography to process direct orders at absolute minimal REST weight.
+*   **Kalshi WebSocket (`trade-api/ws/v2`)**: Natively ingesting `orderbook_delta` matrices to update limits fractional milliseconds ahead of institutional latency algorithms.
+*   **Polymarket Gamma API (`gamma-api.polymarket.com/events`)**: Continuously mapping encoded slug paths for cross-exchange risk-free arbitrage.
+*   **Open-Meteo Ensemble (`ensemble-api.open-meteo.com`)**: Bypassing LLMs explicitly by injecting strict quantified forecast limits (e.g. 31-member probabilistic weather modeling). 
 
-This system fundamentally rejects "crystal-ball" outcome guessing. Instead, it systematically profits off **Micro-Volatility and Human Panic** via machine-speed latency exploitation. 
+### The Full Stack Monitoring Suite
+*   **Backend (`dashboard_api.py`)**: A live `FastAPI` + `Uvicorn` engine tracking metrics parsed cleanly from local `kalshi_trades.jsonlines` output boundaries. 
+*   **Frontend UI (`frontend/`)**: React.js / Vite terminal framework providing pure numerical dashboard visualization to monitor AI inference thresholds and PNL vectors instantly.
 
-The strategy isolates edge using three concurrent vectors:
-*   **Adverse Selection Protection:** Human traders place neutral limits symmetrically. When a whale dumps a position, these retail limits are absorbed instantly (adverse selection). KalshiBot natively shifts its inventory quotes dynamically. If the AI believes a market is fundamentally undervalued at $0.50, KalshiBot tightens its active Bid (e.g., to $0.49), but dramatically widens its short Ask out of reach (to $0.65). It continuously collects favorable, edge-aligned inventory during violent swings while preventing toxic flow from hitting its wrong side.
-*   **L2 Orderbook Momentum Sweeping:** Humans react to the printed price. KalshiBot reacts to resting limit imbalances. By parsing `orderbook_delta`, if the bid/ask stack jumps to a > 3:1 ratio, the bot front-runs the break by executing *marketable limits* (+1c slippage) to sweep liquidity before the spread physically moves.
-*   **Risk-Free Parity Hedging:** Constant absolute-value scanning dynamically pairs Kalshi logic states against Gamma-API Polymarket contracts, seeking multi-percentage risk-free yielding structures globally.
+---
 
-## The Strategy Primitives
+## 🧠 SOTA Architectural Philosophy (Dual-Loop)
 
-The codebase utilizes multiple modular attack vectors based on the LLM's determined edge:
+Older AI models routinely encounter **physics bottlenecks**: LLMs require upwards of 800-1500 milliseconds to calculate inference trees, yet market limit books move in sub-milliseconds. Kalshibot eliminates this bottleneck using a **Dual-Loop Memory Architecture**. 
 
-*   **Asymmetric Market Maker (`market_maker.py`)** 
-    Doesn't just passively rest. Uses Edge-Weighted Spread Skewing—aggressively leaning limit orders onto the underpriced side to capture optimal directional inventory while protecting queue positions natively against micro-drifts.
-*   **Momentum Rider (`momentum_rider.py`)** 
-    Reacts to early L2 volume imbalance. Implements $+1c$ spread-crossing slippage traps to guarantee fills on accelerating breakouts, accompanied by a dynamic `2-cent Trailing Stop` to protect secured premium.
-*   **Arbitrage Engine (`arbitrage_scanner.py`)** 
-    Continuously monitors parallel Polymarket Gamma API events, rigidly cross-checking native absolute expiration windows to safely execute risk-free spread hedges.
-*   **Fractional Copy Trader (`copy_trader.py`)** 
-    Listens to webhook data sources and algorithmically calculates fractional Kelly sizing boundaries to dynamically mimic historically profitable prediction whales.
+### Visual Execution Flow
+```text
+[Kalshi WebSocket] ---> Streams L2 Orderbook Data
+   |
+   +---> [TimesFM 2.5 Quant Loop] ---> Calculates 16-Tick Trajectory
+   |
+   +---> [Gemma 4 LangGraph Loop] ---> Outputs JSON {"bias": "LONG_YES"}
+   |
+   +---> [SHARED_STRATEGY_STATE]  <--- Synchronizes Constraints Globally
+   |
+   +---> [Fast-Loop Boundaries]   ---> Intersects (TimesFM Diff) vs (L2 Ask)
+   |
+   +---> If Difference >= MIN_EDGE ---> Executes Instant Kalshi REST Limit Orders
+```
 
-## Security Warning
+1. **The Fast Loop (Execution & Quant Boundaries)**
+   Operating inside `main.py`, an aggressive WebSockets event stream tracks the raw L2 market arrays across active trackers.
+   * On every L2 change, Google's `TimesFM 2.5` algorithm updates the expected 16-tick algorithmic trajectory.
+   * Simultaneously, it instantly references the global `SHARED_STRATEGY_STATE` pipeline. 
+   * If a `LONG_NO` or `LONG_YES` strategy from Gemma crosses the quantitative threshold gap—**(TimesFM Target Mean) - (Best Ask) >= MIN_EDGE**—the Fast Loop natively injects an execution boundary in nanoseconds! No LangGraph delays involved!
 
-This repository executes over **live institutional liquidity** and demands `.pem` RSA file generation.
-> **DO NOT** commit your `kalshi.pem`, `kalshi.key`, or any `.env` files into public repos. A zero-trust `.gitignore` is provided in the root to help prevent secrets exposure. 
+2. **The Slow Loop (Macro-Reasoning State Engine)**
+   The overarching LangGraph `TradingAgent` operates continuously behind the scenes. 
+   * Four zero-latency persona instances (Bull, Bear, Volatility Forecaster, Risk Management) parse global conditions without invoking network endpoints.
+   * `TradingAgent` finalizes parameters across Kelly-calculated sizing limits to queue internal limit parameters seamlessly to the Fast-Loop string!
+
+---
+
+## 🛡️ Filtering & Security Engines
+
+*   **Toxic Drops (`filter_engine.py`)**: Instantaneously intersects the WebSockets feed, completely rejecting multi-leg headers (e.g., `"MULTIGAME"`, `"COMBO"`, `"PARLAY"`) to avoid unpredictable "impossible calculation" inference crashes.
+*   **Zero-Trust Security**: Employs raw absolute `.pem` RSA file generation locally bypassing 3rd-party Kalshi SDK library abstraction completely.
+*   **Idempotency & Slip Protocols**: The Fast Loop generates algorithmic UUID tracking to guarantee a zero-double-spend environment automatically routing limits across micro-drifts dynamically.
+
+---
+
+## 🚀 Execution & Command Reference
+
+**1. Boot the Master Logic Daemon (Fast + Slow Loop AI):**
+```bash
+cd ~/Kalshi
+bash start_daemon.sh 
+```
+*(Executes flight-check diagnostics securely validating cryptography tokens & `.env` models before dropping directly into the L2 Orderbook stream!)*
+
+**2. Boot the API Backbone:**
+```bash
+cd ~/Kalshi
+bash start_fullstack.sh 
+```
+
+**3. Boot the Real-Time Viewer:**
+```bash
+cd ~/Kalshi/frontend
+npm run dev
+```
+
+*Warning: Ensure `.env` settings map `PAPER_MODE=False` and `MIN_EDGE` logic properly before committing production hardware! Use `pkill -f main.py` when flushing loops manually to prevent recursive process clashes!*
