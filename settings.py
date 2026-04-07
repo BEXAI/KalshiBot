@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     MAX_DAILY_SPEND: float = Field(20.0, description="Max daily spend in dollars/cents")
     KILL_SWITCH_ACTIVE: bool = Field(False, description="Disable all trading if True")
     MAX_DRAWDOWN: float = Field(20.0, description="Max overall drawdown allowed")
+    MIN_EDGE: float = Field(0.015, description="Minimum algorithmic edge difference (e.g. 0.015) needed to execute HFT triggers natively")
     
     # LLM Parameters
     OLLAMA_URL: str = Field("http://127.0.0.1:11434", description="Local Ollama instance URL")

@@ -125,7 +125,7 @@ class KalshiClientWrapper:
             error_cache.record_error("KalshiClientWrapper", e, {"endpoint": "/markets"})
             return []
 
-    async def place_order(self, market_id: str, side: str, amount_cents: int, limit_price_cents: int):
+    async def place_order(self, market_id: str, action: str, amount_cents: int, limit_price_cents: int, contract_side: str = "yes"):
         """
         Places a raw limit order onto Kalshi.
         (Natively handled via raw REST payload targeting the /orders endpoint)
@@ -140,21 +140,25 @@ class KalshiClientWrapper:
         limit_price_cents = max(1, min(99, int(limit_price_cents)))
 
         payload = {
-            "action": side.lower(),
+            "action": action.lower(),
             "client_order_id": idempotency_uuid,
             "count": amount_cents,
-            "side": "yes",
+            "side": contract_side.lower(),
             "ticker": market_id,
-            "type": "limit",
-            "yes_price": limit_price_cents
+            "type": "limit"
         }
+        
+        if contract_side.lower() == "yes":
+            payload["yes_price"] = limit_price_cents
+        else:
+            payload["no_price"] = limit_price_cents
         
         headers = self._generate_headers("POST", path)
         print(f"[KALSHI API - NO SDK] Successfully generated idempotent payload {idempotency_uuid} for {market_id}")
         
         # Protect Capital if explicitly in Paper Trading 
         if settings.PAPER_MODE:
-            print(f"[PAPER MODE EXECUTION] Simulated order placement: {side} {amount_cents} contracts on {market_id} @ {limit_price_cents}c.")
+            print(f"[PAPER MODE EXECUTION] Simulated order placement: {action} {amount_cents} {contract_side} contracts on {market_id} @ {limit_price_cents}c.")
             return {"status": "simulated", "order_id": idempotency_uuid}
             
         url = f"{self.base_url}{path}"

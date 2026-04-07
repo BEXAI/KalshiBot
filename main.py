@@ -57,6 +57,9 @@ async def main():
         print(f"Connected Master Session Pool targeting {kalshi_client.base_url}")
         print("Launching live WebSocket streams...")
         
+        # Dual-Loop Asynchronous Central Memory Bound
+        SHARED_STRATEGY_STATE = {}
+        
         # Iterating over the live market ticker event loop stream!
         while True:
             try:
@@ -73,6 +76,38 @@ async def main():
                         if ob_market and tick_aggregator.is_strategic_market(ob_market):
                             if tick_aggregator.is_toxic_market_id(ob_market):
                                 continue
+                            
+                            # --- SOTA ASYNC DUAL LOOP: FAST EXECUTION! ---
+                            # The loop instantaneously polls the slow macro reasoning strategy logic without blocking!
+                            strategy = SHARED_STRATEGY_STATE.get(ob_market, {"bias": "HOLD"})
+                            if strategy["bias"] != "HOLD" and timesfm_forecaster:
+                                tfm_proj_hist = timesfm_forecaster.tick_buffers.get(ob_market)
+                                if tfm_proj_hist and len(tfm_proj_hist) > 0:
+                                    target_mean = sum(tfm_proj_hist) / len(tfm_proj_hist)
+                                    best_ask = 100
+                                    asks = ob_data.get('yes_asks', [])
+                                    if asks: best_ask = min([p for p, q in asks if q > 0] or [100])
+                                    
+                                    # Target Fast Edge Logic
+                                    if strategy["bias"] == "LONG_YES" and (target_mean - (best_ask/100.0)) >= settings.MIN_EDGE:
+                                        exec_size = int(strategy.get("amount", 1.0) * 100)
+                                        print(f"⚡ [HFT EXECUTE] BUY {exec_size} YES {ob_market} @ {best_ask}c | TFM Target: {target_mean*100:.1f}c")
+                                        if not settings.PAPER_MODE:
+                                            await kalshi_client.place_order(ob_market, "buy", exec_size, best_ask)
+                                        SHARED_STRATEGY_STATE[ob_market] = {"bias": "HOLD"}
+                                        
+                                    elif strategy["bias"] == "LONG_NO":
+                                        best_no_ask = 100
+                                        no_asks = ob_data.get('no_asks', [])
+                                        if no_asks: best_no_ask = min([p for p, q in no_asks if q > 0] or [100])
+                                        no_target = 1.0 - target_mean
+                                        if (no_target - (best_no_ask/100.0)) >= settings.MIN_EDGE:
+                                            exec_size = int(strategy.get("amount", 1.0) * 100)
+                                            print(f"⚡ [HFT EXECUTE] BUY {exec_size} NO {ob_market} @ {best_no_ask}c | TFM Target NO: {no_target*100:.1f}c")
+                                            if not settings.PAPER_MODE:
+                                                await kalshi_client.place_order(ob_market, "buy", exec_size, best_no_ask, contract_side="no")
+                                            SHARED_STRATEGY_STATE[ob_market] = {"bias": "HOLD"}
+                            
                             ob_imbalance = tick_aggregator.track_orderbook(ob_market, ob_data)
                             if ob_imbalance > 3.0:
                                 await momentum_rider.evaluate_momentum_imbalance(ob_market, ob_imbalance)
@@ -160,6 +195,18 @@ async def main():
 
                                 # 2. Heavy AI Strategy Pipeline for Standard Prediction Markets
                                 final_state = await agent.run_market_cycle(_ms)
+
+                                # EXPORT SOTA OVERARCHING STRATEGY TO FAST LOOP
+                                decision = final_state.get("decision", "SKIP")
+                                if decision in ["TRADE", "PAPER_TRADE"]:
+                                    bias = "LONG_YES" if final_state["llm_prob"] > 0.5 else "LONG_NO"
+                                    # Export asynchronous strategic parameters silently!
+                                    SHARED_STRATEGY_STATE[_mid] = {
+                                        "bias": bias,
+                                        "confidence": final_state["llm_prob"],
+                                        "amount": final_state.get("trade_amount", 1.0)
+                                    }
+                                    print(f"🧠 [AGENT STRATEGY UPDATE] {_mid} -> Bias: {bias} queued.")
 
                                 arb_result = await arbitrage.scan_market(_mid, _ms["question"], _ms["mid_price"])
                                 mm_result = await market_maker.provide_liquidity(_mid, final_state['llm_prob'])
