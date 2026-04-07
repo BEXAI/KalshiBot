@@ -24,16 +24,25 @@ class TimesFMForecaster:
         if self.tfm is None:
             print("[TIMESFM] Lazy-loading Foundation Model weights (~400MB) into memory natively...")
             device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
-            self.tfm = timesfm.TimesFm(
-                context_len=self.context_len,
-                horizon_len=self.horizon_len,
-                input_patch_len=32,
-                output_patch_len=128,
-                num_layers=20,
-                model_dims=1280,
-                backend="gpu" if device != "cpu" else "cpu"
+            
+            # [CRITICAL SECURITY PATCH] HuggingFace Hub pushes generic networking proxies into initialized kwargs.
+            # Google's TimesFM 2.5 engine enforces a hard fail on unknown parameters natively. We intercept and strip it!
+            original_init = timesfm.TimesFM_2p5_200M_torch.__init__
+            def patched_init(self, *args, **kwargs):
+                valid_kwargs = {k: v for k, v in kwargs.items() if k in ["torch_compile", "config"]}
+                original_init(self, *args, **valid_kwargs)
+            timesfm.TimesFM_2p5_200M_torch.__init__ = patched_init
+            
+            # Map directly to the v2.5 Architecture endpoints securely!
+            self.tfm = timesfm.TimesFM_2p5_200M_torch.from_pretrained("google/timesfm-2.5-200m-pytorch")
+            
+            self.tfm.compile(
+                timesfm.ForecastConfig(
+                    max_context=self.context_len,
+                    max_horizon=self.horizon_len,
+                    normalize_inputs=True,
+                )
             )
-            self.tfm.load_from_checkpoint(repo_id="google/timesfm-1.0-200m")
             print(f"[TIMESFM] Architecture fully loaded onto exactly '{device}'. Ready for sequence arrays.")
 
     def record_tick(self, market_id: str, mid_price: float):
@@ -74,10 +83,13 @@ class TimesFMForecaster:
         
         print(f"\n[TIMESFM] Triggering Zero-Shot Quantitative Predictor on {market_id}")
         
-        # Predict the exact next horizon batch
-        forecasts, _ = self.tfm.forecast([context_array])
+        # Predict the exact next horizon batch using v2.5 keyword targets
+        forecasts, _ = self.tfm.forecast(
+            horizon=self.horizon_len,
+            inputs=[context_array]
+        )
         
-        # forecasts is [batch, target, horizon]
+        # forecasts is [batch, horizon]
         # Calculate exactly the mean predicted price across the target bounds
         mean_trajectory = float(np.mean(forecasts[0]))
         

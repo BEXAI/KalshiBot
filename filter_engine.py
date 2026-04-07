@@ -24,6 +24,17 @@ class TickAggregator:
         """Determines if the market belongs to an active category. For MVP deployment, we track all Kalshi prefix markets to guarantee rapid baseline execution bounds."""
         return "KX" in market_id.upper()
 
+    def is_toxic_market_id(self, market_id: str) -> bool:
+        """
+        Rejects Multi-Game, Cross-Category, or Combo markets purely natively off the Ticker ID before API waste occurs!
+        """
+        id_norm = market_id.upper()
+        toxic_prefixes = ["MULTIGAME", "CROSSCATEGORY", "COMBO", "PARLAY"]
+        for p in toxic_prefixes:
+            if p in id_norm:
+                return True
+        return False
+
     def is_toxic_market(self, market_title: str) -> bool:
         """
         Rejects Multi-Leg Combos and Parlay Markets which destroy standard single-variable AI Inference assumptions.

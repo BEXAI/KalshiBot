@@ -71,6 +71,8 @@ async def main():
                         ob_data = tick.get("msg", {})
                         ob_market = ob_data.get("market_ticker")
                         if ob_market and tick_aggregator.is_strategic_market(ob_market):
+                            if tick_aggregator.is_toxic_market_id(ob_market):
+                                continue
                             ob_imbalance = tick_aggregator.track_orderbook(ob_market, ob_data)
                             if ob_imbalance > 3.0:
                                 await momentum_rider.evaluate_momentum_imbalance(ob_market, ob_imbalance)
@@ -86,6 +88,10 @@ async def main():
                     
                     # 1. Broad Strategic Whitelist Filter
                     if not tick_aggregator.is_strategic_market(market_id):
+                        continue
+                        
+                    # 1.5 Multi-Game & Cross-Category Strict Filter Check
+                    if tick_aggregator.is_toxic_market_id(market_id):
                         continue
                     
                     # Simple UI heartbeat tick every 20 target events
